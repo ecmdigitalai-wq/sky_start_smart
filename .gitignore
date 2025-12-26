@@ -23,8 +23,7 @@ dist/
 # ===============================
 # Environment files
 # ===============================
-.env
-.env.*
+
 !.env.example
 
 # ===============================
@@ -60,8 +59,7 @@ ios/Podfile.lock
 # ===============================
 # Firebase
 # ===============================
-google-services.json
-GoogleService-Info.plist
+
 
 # ===============================
 # Metro / Watchman

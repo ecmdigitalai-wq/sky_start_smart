@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "580178347630",
+    "project_id": "startsmart-532ae",
+    "storage_bucket": "startsmart-532ae.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:580178347630:android:1019439c9c4452151ec87f",
+        "android_client_info": {
+          "package_name": "com.ecreation.startsmart"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "580178347630-dfcslie54dfc1btu8p41vdjtkcugdl6p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ecreation.startsmart",
+            "certificate_hash": "cfd64110fb069f9eb4ae64e8e50586e922fee868"
+          }
+        },
+        {
+          "client_id": "580178347630-f24vjaiu7564io7bo5ff6stk1kft5p41.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ecreation.startsmart",
+            "certificate_hash": "78634c3a16b2ef42693a0d154cea15369fe0061a"
+          }
+        },
+        {
+          "client_id": "580178347630-n1hemoj2o4j8s3neqjrap65pc77nukod.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBa4Jo8-TG37a-kPKdDEHBfkTkUxahd7pc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "580178347630-n1hemoj2o4j8s3neqjrap65pc77nukod.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
