@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "Start Smart",
+    "slug": "start-smart",
+    "version": "1.0.2",
+    "orientation": "default",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ecreation.startsmart"
+    },
+    "android": {
+      "package": "com.ecreation.startsmart",
+      "versionCode": 3,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#186AB0"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "newArchEnabled": false,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "minSdkVersion": 23
+          },
+          "ios": {
+            "newArchEnabled": false
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "e1136207-de64-45f0-9214-55a5be35ee26"
+      }
+    },
+    "scheme": "startsmart",
+    "owner": "ecreation.dev"
+  }
+}
