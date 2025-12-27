@@ -86,3 +86,7 @@ coverage/
 *.jks
 *.pem
 *.key
+/android
+/ios
+/android
+/ios
