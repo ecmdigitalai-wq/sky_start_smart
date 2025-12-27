@@ -1,283 +1,427 @@
-import { SafeAreaView } from "react-native-safe-area-context";
 import {
   View,
   Text,
-  Image,
-  TouchableOpacity,
   TextInput,
-  ToastAndroid,
+  TouchableOpacity,
+  Image,
   ScrollView,
+  ToastAndroid,
   ActivityIndicator,
+  Platform,
+  Alert,
+  KeyboardAvoidingView,
+  StyleSheet,
+  Dimensions,
+  StatusBar,
+  Animated,
+  Keyboard
 } from "react-native";
-import React, { useState } from "react";
-import Svg, { Path } from "react-native-svg";
-import axios from "axios";
-
+import React, { useState, useEffect, useRef } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient"; 
 import { auth } from "../firebaseConfig";
-import {
-  createUserWithEmailAndPassword,
-  updateProfile,
-  GoogleAuthProvider,
-  signInWithCredential,
-} from "firebase/auth";
-
+import { createUserWithEmailAndPassword, updateProfile, signInWithCredential, GoogleAuthProvider } from "firebase/auth";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import axios from "axios";
 import { useUserStore } from "../store/user";
 
-// ⚠️ Google config (same as Login.js)
-GoogleSignin.configure({
-  webClientId:
-    "YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com",
-});
+const { width, height } = Dimensions.get("window");
 
 const Signup = ({ navigation }) => {
-  const { setLocalUser, setUser } = useUserStore();
+  const { setUser, setLocalUser } = useUserStore();
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  const [nameFocused, setNameFocused] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passFocused, setPassFocused] = useState(false);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    try {
+      if(process.env.EXPO_PUBLIC_WEB_CLIENT_ID){
+          GoogleSignin.configure({
+            webClientId: process.env.EXPO_PUBLIC_WEB_CLIENT_ID,
+          });
+      }
+    } catch (e) {
+      console.log("Google Config Error");
+    }
+  }, []);
+
   const showToast = (msg) => {
-    ToastAndroid.showWithGravity(
-      msg,
-      ToastAndroid.SHORT,
-      ToastAndroid.BOTTOM
-    );
+    if (Platform.OS === "android") {
+      ToastAndroid.showWithGravity(msg, ToastAndroid.SHORT, ToastAndroid.BOTTOM);
+    } else {
+      Alert.alert("Start Smart", msg);
+    }
   };
 
-  // ================= EMAIL SIGNUP =================
-  const signUpUser = async () => {
+  const userSignUp = async () => {
+    Keyboard.dismiss();
+    if (!email || !password || !name) {
+      showToast("Please fill all fields");
+      return;
+    }
+
     try {
       setLoading(true);
 
-      const res = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-      await updateProfile(res.user, {
-        displayName: name,
-      });
-
+      const res = await createUserWithEmailAndPassword(auth, email, password);
       const user = res.user;
 
-      // backend save
-      const existingUser = await axios.get(
-        `https://start-smart-backend.vercel.app/api/get-user?email=${user.email}`
-      );
+      await updateProfile(user, { displayName: name });
 
-      if (!existingUser?.data) {
-        await axios.post(
-          "https://start-smart-backend.vercel.app/api/users",
-          {
-            email: user.email,
-            name: user.displayName,
-          }
-        );
+      try {
+        await axios.post("https://start-smart-backend.vercel.app/api/users", {
+          email: user.email,
+          name: name,
+        });
+      } catch (backendError) {
+        console.log("Backend sync failed", backendError);
       }
 
-      setUser(user);
-      setLocalUser(user);
-      showToast("Account created successfully");
-    } catch (err) {
-      setUser(null);
-      showToast("Signup failed. Try again");
+      const userData = { ...user, displayName: name, email: user.email };
+      setUser(userData);
+      setLocalUser(userData);
+      showToast("Account created successfully!");
+    } catch (error) {
+      if (error.code === "auth/email-already-in-use") showToast("Email already in use");
+      else if (error.code === "auth/weak-password") showToast("Password should be at least 6 characters");
+      else showToast("Signup failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  // ================= GOOGLE SIGNUP =================
   const onGoogleButtonPress = async () => {
     try {
       setGoogleLoading(true);
+      await GoogleSignin.hasPlayServices();
+      const { data } = await GoogleSignin.signIn();
+      const idToken = data?.idToken;
+      if (!idToken) throw new Error("No ID Token");
 
-      await GoogleSignin.hasPlayServices({
-        showPlayServicesUpdateDialog: true,
-      });
-
-      const { idToken } = await GoogleSignin.signIn();
-
-      const googleCredential =
-        GoogleAuthProvider.credential(idToken);
-
-      const result = await signInWithCredential(
-        auth,
-        googleCredential
-      );
-
+      const googleCredential = GoogleAuthProvider.credential(idToken);
+      const result = await signInWithCredential(auth, googleCredential);
       const user = result.user;
 
-      const existingUser = await axios.get(
-        `https://start-smart-backend.vercel.app/api/get-user?email=${user.email}`
-      );
-
-      if (!existingUser?.data) {
-        await axios.post(
-          "https://start-smart-backend.vercel.app/api/users",
-          {
+      try {
+        const existingUser = await axios.get(`https://start-smart-backend.vercel.app/api/get-user?email=${user.email}`);
+        if (!existingUser?.data) {
+          await axios.post("https://start-smart-backend.vercel.app/api/users", {
             email: user.email,
-            name: user.displayName,
-          }
-        );
-      }
+            name: user.displayName || "Google User",
+          });
+        }
+      } catch (err) { console.log("Backend Sync Skipped"); }
 
       setUser(user);
       setLocalUser(user);
       showToast("Google signup successful");
-    } catch (err) {
-      setUser(null);
-      showToast("Google signup failed");
+    } catch (error) {
+      if (error.code !== -5) showToast("Google sign-in failed");
     } finally {
       setGoogleLoading(false);
     }
   };
 
   return (
-    <SafeAreaView className="flex-1">
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View className="h-screen justify-between">
-          <Image
-            source={require("../assets/loginHeader.png")}
-            className="w-[70%] h-24 my-4 mx-auto"
-            resizeMode="contain"
-          />
+    <View style={styles.mainContainer}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
+      
+      <View style={styles.headerContainer}>
+        <LinearGradient
+            colors={["#2563eb", "#1e40af"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.gradientHeader}
+        >
+             <View style={styles.circle1} />
+             <View style={styles.circle2} />
 
-          <View className="w-[85%] mx-auto space-y-5">
-            <Text className="text-blue-500 text-3xl font-bold">
-              Sign Up
-            </Text>
+             <View style={styles.headerContent}>
+                 <Image 
+                   source={require("../assets/loginHeader.png")} 
+                   style={styles.headerImage} 
+                   resizeMode="contain" 
+                 />
+                 <Text style={styles.headerTitle}>Create Account</Text>
+                 <Text style={styles.headerSubtitle}>Join us and start learning smarter</Text>
+             </View>
+        </LinearGradient>
+      </View>
 
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              placeholder="Full Name"
-              className="bg-gray-300 rounded-lg px-4 py-2"
-            />
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : "height"} 
+        style={{ flex: 1, zIndex: 10 }}
+      >
+        <ScrollView 
+            contentContainerStyle={styles.scrollContainer} 
+            showsVerticalScrollIndicator={false} 
+            keyboardShouldPersistTaps="handled"
+        >         
+          
+          <Animated.View 
+            style={[
+              styles.floatingCard, 
+              { 
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }] 
+              }
+            ]}
+          >          
+            
+            <Text style={styles.label}>Full Name</Text>
+            <View style={[
+                styles.inputContainer, 
+                nameFocused && styles.inputFocused
+            ]}>
+                <Ionicons name="person-outline" size={20} color={nameFocused ? "#2563eb" : "#94a3b8"} style={styles.inputIcon} />
+                <TextInput
+                    value={name}
+                    onChangeText={setName}
+                    onFocus={() => setNameFocused(true)}
+                    onBlur={() => setNameFocused(false)}
+                    placeholder="John Doe"
+                    autoCapitalize="words"
+                    style={styles.input}
+                    placeholderTextColor="#cbd5e1"
+                />
+            </View>
 
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Email"
-              autoCapitalize="none"
-              className="bg-gray-300 rounded-lg px-4 py-2"
-            />
+            <Text style={styles.label}>Email Address</Text>
+            <View style={[
+                styles.inputContainer, 
+                emailFocused && styles.inputFocused
+            ]}>
+                <Ionicons name="mail-outline" size={20} color={emailFocused ? "#2563eb" : "#94a3b8"} style={styles.inputIcon} />
+                <TextInput
+                    value={email}
+                    onChangeText={setEmail}
+                    onFocus={() => setEmailFocused(true)}
+                    onBlur={() => setEmailFocused(false)}
+                    placeholder="name@example.com"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    style={styles.input}
+                    placeholderTextColor="#cbd5e1"
+                />
+            </View>            
 
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Password"
-              secureTextEntry
-              autoCapitalize="none"
-              className="bg-gray-300 rounded-lg px-4 py-2"
-            />
-
-            <TextInput
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              placeholder="Confirm Password"
-              secureTextEntry
-              autoCapitalize="none"
-              className="bg-gray-300 rounded-lg px-4 py-2"
-            />
-
-            {/* SIGNUP BUTTON */}
-            <TouchableOpacity
-              disabled={loading || googleLoading}
-              onPress={() => {
-                if (
-                  !name ||
-                  !email ||
-                  !password ||
-                  !confirmPassword
-                ) {
-                  showToast("All fields are required");
-                  return;
-                }
-
-                if (password.length < 8) {
-                  showToast(
-                    "Password must be at least 8 characters"
-                  );
-                  return;
-                }
-
-                if (password !== confirmPassword) {
-                  showToast("Passwords do not match");
-                  return;
-                }
-
-                signUpUser();
-              }}
-              className="bg-blue-500 p-3 rounded-xl items-center"
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text className="text-white font-semibold">
-                  Sign Up
-                </Text>
-              )}
+            <Text style={styles.label}>Password</Text>
+            <View style={[
+                styles.inputContainer, 
+                passFocused && styles.inputFocused
+            ]}>
+                <Ionicons name="lock-closed-outline" size={20} color={passFocused ? "#2563eb" : "#94a3b8"} style={styles.inputIcon} />
+                <TextInput
+                    value={password}
+                    onChangeText={setPassword}
+                    onFocus={() => setPassFocused(true)}
+                    onBlur={() => setPassFocused(false)}
+                    placeholder="Create a password"
+                    secureTextEntry={!showPassword}
+                    style={styles.input}
+                    placeholderTextColor="#cbd5e1"
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: 5 }}>
+                    <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#94a3b8" />
+                </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity onPress={userSignUp} disabled={loading} activeOpacity={0.8} style={styles.shadowBtn}>
+              <LinearGradient colors={["#2563eb", "#1d4ed8"]} style={styles.signupBtn} start={{x:0, y:0}} end={{x:1, y:0}}>
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.signupBtnText}>Sign Up</Text>}
+              </LinearGradient>
             </TouchableOpacity>
 
-            <Text className="text-center">OR</Text>
+            <View style={styles.dividerContainer}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>Or continue with</Text>
+                <View style={styles.dividerLine} />
+            </View>
 
-            {/* GOOGLE SIGNUP */}
-            <TouchableOpacity
-              disabled={loading || googleLoading}
-              onPress={onGoogleButtonPress}
-              className="border-2 border-blue-500 p-3 rounded-xl flex-row items-center"
+            <TouchableOpacity 
+                onPress={onGoogleButtonPress} 
+                disabled={loading || googleLoading} 
+                style={styles.googleBtn}
+                activeOpacity={0.7}
             >
-              {googleLoading ? (
-                <ActivityIndicator />
-              ) : (
-                <Svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  x="0px"
-                  y="0px"
-                  width={25}
-                  height={25}
-                  viewBox="0 0 48 48"
-                >
-                  <Path
-                    fill="#FFC107"
-                    d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
-                  ></Path>
-                  <Path
-                    fill="#FF3D00"
-                    d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
-                  ></Path>
-                  <Path
-                    fill="#4CAF50"
-                    d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"
-                  ></Path>
-                  <Path
-                    fill="#1976D2"
-                    d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"
-                  ></Path>
-                </Svg>
-              )}
-              <Text className="flex-1 text-center font-semibold">
-                Continue with Google
-              </Text>
+                {googleLoading ? (
+                    <ActivityIndicator color="#3b82f6" />
+                ) : (
+                    <View style={styles.googleBtnContent}>
+                        <Image 
+                            source={{ uri: "https://developers.google.com/identity/images/g-logo.png" }} 
+                            style={{ width: 22, height: 22 }} 
+                            resizeMode="contain"
+                        />
+                        <Text style={styles.googleBtnText}>Sign up with Google</Text>
+                    </View>
+                )}
             </TouchableOpacity>
-          </View>
 
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Login")}
-            className="flex-row justify-center items-center my-4"
-          >
-            <Text>Already have an account? </Text>
-            <Text className="text-blue-500">Log In</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+            <View style={styles.footerContainer}>
+                <Text style={styles.footerText}>Already have an account? </Text>
+                <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+                  <Text style={styles.loginText}>Log In</Text>
+                </TouchableOpacity>
+            </View>
+
+          </Animated.View>
+          
+          <View style={{ height: 50 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  mainContainer: { 
+    flex: 1, 
+    backgroundColor: "#f8fafc" 
+  },
+  headerContainer: {
+    height: height * 0.20, 
+    width: '100%',
+  },
+  gradientHeader: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center', 
+    paddingTop: 10, 
+    borderBottomLeftRadius: 30, 
+    borderBottomRightRadius: 30,
+    position: 'relative',
+    overflow: 'hidden'
+  },
+  circle1: { position: 'absolute', top: -60, left: -60, width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255,255,255,0.1)' },
+  circle2: { position: 'absolute', bottom: -20, right: -40, width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(255,255,255,0.1)' },
+
+  headerContent: {
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  headerImage: {
+    width: 140, 
+    height: 45,
+    marginBottom: 8,
+    tintColor: 'white' 
+  },
+  headerTitle: {
+    color: 'white',
+    fontSize: 24, 
+    fontWeight: '800',
+    letterSpacing: 0.5
+  },
+  headerSubtitle: {
+    color: '#e0e7ff', 
+    fontSize: 13,
+    fontWeight: '500',
+    opacity: 0.9
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    alignItems: 'center',
+    paddingTop: 5
+  },
+  floatingCard: {
+    width: width * 0.9, 
+    backgroundColor: 'white',
+    marginTop: 3, 
+    borderRadius: 24,
+    paddingVertical: 30,
+    paddingHorizontal: 24,
+    shadowColor: "#1e293b",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10, 
+  },
+  label: {
+    color: '#334155',
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 6,
+    marginLeft: 4
+  },
+  inputContainer: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    backgroundColor: "#f8fafc", 
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    borderRadius: 14, 
+    paddingHorizontal: 16, 
+    height: 50, 
+    marginBottom: 15
+  },
+  inputFocused: {
+    borderColor: "#2563eb",
+    backgroundColor: "#eff6ff"
+  },
+  inputIcon: { marginRight: 12 },
+  input: { flex: 1, fontSize: 15, color: "#1e293b", fontWeight: "500" },
+  
+  shadowBtn: {
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
+    marginTop: 5
+  },
+  signupBtn: { 
+    paddingVertical: 15, 
+    borderRadius: 14, 
+    alignItems: "center",
+  },
+  signupBtnText: { color: "#ffffff", fontSize: 16, fontWeight: "bold", letterSpacing: 0.5 },
+
+  dividerContainer: { flexDirection: "row", alignItems: "center", marginVertical: 24 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: "#e2e8f0" },
+  dividerText: { marginHorizontal: 12, color: "#94a3b8", fontSize: 13, fontWeight: "500" },
+
+  googleBtn: { 
+    backgroundColor: "#ffffff", 
+    borderWidth: 1, 
+    borderColor: "#cbd5e1", 
+    borderRadius: 14, 
+    paddingVertical: 14,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  googleBtnContent: {
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
+  googleBtnText: { fontSize: 15, fontWeight: "600", color: "#334155", marginLeft: 12 },
+
+  footerContainer: { flexDirection: "row", justifyContent: "center", marginTop: 24 },
+  footerText: { color: "#64748b", fontSize: 14, fontWeight: "500" },
+  loginText: { color: "#2563eb", fontWeight: "bold", fontSize: 14 },
+});
 
 export default Signup;

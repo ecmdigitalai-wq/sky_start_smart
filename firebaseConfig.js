@@ -11,7 +11,7 @@ const firebaseConfig = {
   projectId: "startsmart-532ae",
   storageBucket: "startsmart-532ae.firebasestorage.app",
   messagingSenderId: "580178347630",
-  appId: "1:580178347630:web:479cdab6c355c4311ec87f",
+  appId: "1:580178347630:web:479cdab6c355c4311ec87f"
 };
 
 // Initialize Firebase App

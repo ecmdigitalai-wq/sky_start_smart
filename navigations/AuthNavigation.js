@@ -1,4 +1,3 @@
-import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Signup from "../screens/Signup";
 import Login from "../screens/Login";
@@ -22,10 +21,10 @@ function NavigationGroup() {
 
 const AuthNavigation = () => {
   return (
-    <NavigationContainer>
+    <>
       <StatusBar style="auto" />
       <NavigationGroup />
-    </NavigationContainer>
+    </>
   );
 };
 

@@ -1,42 +1,35 @@
+import "./global.css"; 
 import "expo-dev-client";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { NavigationContainer } from "@react-navigation/native"; // ✅ Import zaroori hai
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { onAuthStateChanged } from "firebase/auth";
 
 import Navigation from "./navigations/Navigation";
 import AuthNavigation from "./navigations/AuthNavigation";
-
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { auth } from "./firebaseConfig";
-import { onAuthStateChanged } from "firebase/auth";
-
 import { useUserStore } from "./store/user";
 
-// Google Sign-In config
+SplashScreen.preventAutoHideAsync();
+
 GoogleSignin.configure({
   webClientId: process.env.EXPO_PUBLIC_WEB_CLIENT_ID,
 });
 
-// Splash screen control
-SplashScreen.preventAutoHideAsync();
-
 export default function App() {
-  const { user, loading, getLocalUser } = useUserStore();
+  const { user, loading, setLocalUser, setUser } = useUserStore();
 
   useEffect(() => {
-    const init = async () => {
-      await SplashScreen.preventAutoHideAsync();
-
-      setTimeout(async () => {
-        await SplashScreen.hideAsync();
-      }, 2000);
-    };
-
-    init();
-
-    // ✅ Firebase v9 correct listener
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      getLocalUser(user);
+      if (user) {
+        setLocalUser(user);
+      } else {
+        setUser(null);
+      }
+      SplashScreen.hideAsync();
     });
 
     return () => unsubscribe();
@@ -44,11 +37,18 @@ export default function App() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color="#312651" />
+      <View className="flex-1 justify-center items-center bg-white">
+        <ActivityIndicator size="large" color="#2563eb" />
       </View>
     );
   }
 
-  return user ? <Navigation /> : <AuthNavigation />;
+  return (
+    <SafeAreaProvider>
+      {/* ✅ Container YAHAN hona chahiye, aur sirf yahan */}
+      <NavigationContainer>
+        {user ? <Navigation /> : <AuthNavigation />}
+      </NavigationContainer>
+    </SafeAreaProvider>
+  );
 }

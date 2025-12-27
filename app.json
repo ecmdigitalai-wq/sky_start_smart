@@ -16,7 +16,8 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ecreation.startsmart"
+      "bundleIdentifier": "com.ecreation.startsmart",
+      "googleServicesFile": "./google-services.json"
     },
     "android": {
       "package": "com.ecreation.startsmart",
@@ -24,7 +25,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#186AB0"
-      }
+      },
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -37,13 +39,15 @@
             "newArchEnabled": true,
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
-            "minSdkVersion": 23
+            "minSdkVersion": 24
           },
           "ios": {
             "newArchEnabled": true
           }
         }
-      ]
+      ],
+      "@react-native-google-signin/google-signin",
+      "expo-font"
     ],
     "extra": {
       "eas": {

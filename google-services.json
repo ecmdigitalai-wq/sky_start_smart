@@ -2,7 +2,7 @@
   "project_info": {
     "project_number": "580178347630",
     "project_id": "startsmart-532ae",
-    "storage_bucket": "startsmart-532ae.appspot.com"
+    "storage_bucket": "startsmart-532ae.firebasestorage.app"
   },
   "client": [
     {
@@ -27,6 +27,22 @@
           "android_info": {
             "package_name": "com.ecreation.startsmart",
             "certificate_hash": "78634c3a16b2ef42693a0d154cea15369fe0061a"
+          }
+        },
+        {
+          "client_id": "580178347630-l91cnbiec2gcb0ellnmn4p8macc3mph1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ecreation.startsmart",
+            "certificate_hash": "74f832006cc8f900636ca82deaf9f9b89215315f"
+          }
+        },
+        {
+          "client_id": "580178347630-n5ojpq4j5p9fdgojhje22dsdpte74uoq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ecreation.startsmart",
+            "certificate_hash": "3f4a31808dceeb48284640c2617163bc290c2620"
           }
         },
         {
