@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Image, StatusBar, Platform, StyleSheet } from "react-native";
+import { View, Image, StatusBar, Platform, StyleSheet, TouchableOpacity, Text } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
@@ -18,67 +18,103 @@ import SemesterEdition from "../screens/SemesterEdition";
 
 const TopTab = createMaterialTopTabNavigator();
 
+function CustomTopTabBar({ state, descriptors, navigation }) {
+  return (
+    <View style={styles.tabWrapper}>
+      <View style={styles.tabContainer}>
+        {state.routes.map((route, index) => {
+          const { options } = descriptors[route.key];
+          const label =
+            options.tabBarLabel !== undefined
+              ? options.tabBarLabel
+              : options.title !== undefined
+              ? options.title
+              : route.name;
+
+          const isFocused = state.index === index;
+
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
+
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
+
+          let activeColor = "#333333"; 
+          if (route.name === "AnnualEdition") activeColor = "#9C27B0";
+          if (route.name === "TermEdition") activeColor = "#204ac0";
+          if (route.name === "SemesterEdition") activeColor = "#8754f2";
+
+          return (
+            <TouchableOpacity
+              key={index}
+              accessibilityRole="button"
+              accessibilityState={isFocused ? { selected: true } : {}}
+              onPress={onPress}
+              style={[
+                styles.tabButton,
+                isFocused 
+                ? { backgroundColor: activeColor, elevation: 4, shadowColor: activeColor, shadowOpacity: 0.3, shadowRadius: 4, shadowOffset: {width: 0, height: 2} } 
+                : { backgroundColor: "transparent" }
+              ]}
+            >
+              <Text style={{ 
+                color: isFocused ? "#ffffff" : "#64748b",
+                fontWeight: isFocused ? "700" : "600",
+                fontSize: 14,
+                textTransform: "capitalize"
+              }}>
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 function TopTabGroup() {
   return (
-    <View style={{ flex: 1, backgroundColor: "#ffffff" }}>
-      {/* ✅ STATUS BAR FIX: Translucent aur Transparent kiya taaki icons dikhein */}
+    <View style={{ flex: 1, backgroundColor: "#ffffff" }}>      
       <StatusBar 
         barStyle="dark-content" 
         backgroundColor="transparent" 
         translucent={true} 
       />
       
-      {/* SafeAreaView ab Status Bar ke liye jagah (padding) banayega */}
       <SafeAreaView edges={['top']} style={{ backgroundColor: "#ffffff", zIndex: 10 }}>
         <View style={styles.headerContainer}>
           <Image
             source={require("../assets/loginHeader.png")}
-            style={{ width: 140, height: 40 }}
+            style={{ width: 160, height: 36, marginTop: 4 }}
             resizeMode="contain"
           />
         </View>
       </SafeAreaView>
 
       <TopTab.Navigator
-        screenOptions={{
-          tabBarShowLabel: true,
-          tabBarActiveTintColor: "#2563eb",
-          tabBarInactiveTintColor: "#64748b",
-          tabBarPressColor: "#eff6ff",
-          tabBarStyle: {
-            backgroundColor: "#ffffff",
-            elevation: 0,
-            shadowOpacity: 0,
-            borderBottomWidth: 1,
-            borderBottomColor: "#f1f5f9",
-            // Fixed height hata di hai taaki content adjust ho sake
-          },
-          tabBarIndicatorStyle: {
-            backgroundColor: "#2563eb",
-            height: 3,
-            borderRadius: 3,
-          },
-          tabBarLabelStyle: {
-            fontSize: 14,
-            fontWeight: "700",
-            textTransform: "capitalize",
-          },
-        }}
+        tabBar={props => <CustomTopTabBar {...props} />}
       >
         <TopTab.Screen 
           name="AnnualEdition" 
           component={AnnualEdition} 
-          options={{ tabBarLabel: "Annual" }} 
+          options={{ tabBarLabel: "Annual Edition" }} 
         />
         <TopTab.Screen 
           name="TermEdition" 
           component={TermEdition} 
-          options={{ tabBarLabel: "Term" }} 
+          options={{ tabBarLabel: "Term Edition" }} 
         />
         <TopTab.Screen 
           name="SemesterEdition" 
           component={SemesterEdition} 
-          options={{ tabBarLabel: "Semester" }} 
+          options={{ tabBarLabel: "Semester Edition" }} 
         />
       </TopTab.Navigator>
     </View>
@@ -114,7 +150,10 @@ function TabGroup() {
           backgroundColor: "#ffffff",
           borderTopWidth: 1,
           borderTopColor: "#f1f5f9",
-          elevation: 8,
+          elevation: 10,
+          shadowColor: "#000",
+          shadowOpacity: 0.05,
+          shadowRadius: 5,
           position: 'absolute',
           bottom: 0,
           left: 0,
@@ -183,10 +222,37 @@ const styles = StyleSheet.create({
   headerContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 12,
+    paddingVertical: 10,
     backgroundColor: "#ffffff",
+    borderBottomWidth: 0,
+    width: "100%",
+    elevation: 2, 
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 2,
+    marginBottom: 0
+  },
+  tabWrapper: {
+    backgroundColor: "#ffffff",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#f1f5f9",
-    width: "100%"
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f1f5f9',
+    borderRadius: 30,
+    padding: 4,
+    height: 48,
+    alignItems: 'center'
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 26,
+    height: '100%',
   }
 });
