@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center', 
-    paddingTop: 10, 
+    paddingTop: 5, 
     borderBottomLeftRadius: 30, 
     borderBottomRightRadius: 30,
     position: 'relative',
@@ -322,12 +322,12 @@ const styles = StyleSheet.create({
 
   headerContent: {
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 5,
   },
   headerImage: {
     width: 140, 
     height: 45,
-    marginBottom: 8,
+    marginBottom: 3,
     tintColor: 'white' 
   },
   headerTitle: {

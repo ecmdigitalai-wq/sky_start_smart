@@ -42,9 +42,9 @@ const AnnualEdition = ({ navigation }) => {
         
         {/* ================= HEADER (Gradient Blue) ================= */}
         <LinearGradient
-          colors={[THEME_COLOR, "#1e40af"]} // Blue to Dark Blue
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+          colors={["#4bb5f1ff", "#2254d1"]} // Blue to Dark Blue
+          start={{ x: 0, y: 1 }}
+          end={{ x: 0, y: 0 }}
           style={styles.headerBox}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

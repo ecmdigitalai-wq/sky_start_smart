@@ -1,11 +1,12 @@
 import React, { useEffect } from "react";
-import { View, Image, StatusBar, Platform, StyleSheet, TouchableOpacity, Text } from "react-native";
+import { View, Image, StatusBar, Platform, StyleSheet, TouchableOpacity, Text, LayoutAnimation } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 
 import MyAccount from "../screens/MyAccount";
 import BookInfo from "../screens/BookInfo";
@@ -19,61 +20,101 @@ import SemesterEdition from "../screens/SemesterEdition";
 const TopTab = createMaterialTopTabNavigator();
 
 function CustomTopTabBar({ state, descriptors, navigation }) {
+  
+  const currentRouteName = state.routes[state.index].name;
+
+  let gradientColors = ['#2254d1', '#2254d1']; 
+  let activeTabColor = "#2458c9ff";
+
+  if (currentRouteName === "TermEdition") {
+    let gradientColors = ['#2254d1', '#2254d1']; 
+    activeTabColor = "#0e43b4ff";
+  } 
+  else if (currentRouteName === "SemesterEdition") {
+    let gradientColors = ['#2254d1', '#2254d1']; 
+    activeTabColor = "#0a3696ff";
+  }
+
   return (
-    <View style={styles.tabWrapper}>
-      <View style={styles.tabContainer}>
-        {state.routes.map((route, index) => {
-          const { options } = descriptors[route.key];
-          const label =
-            options.tabBarLabel !== undefined
-              ? options.tabBarLabel
-              : options.title !== undefined
-              ? options.title
-              : route.name;
+    <View>
+      <LinearGradient
+        colors={gradientColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={{ width: '100%', paddingBottom: 10, borderBottomLeftRadius: 50, borderBottomRightRadius: 50 }}
+      >
+        <SafeAreaView edges={['top']} style={{ backgroundColor: "transparent" }}>
+          <View style={styles.headerContainer}>
+            <View style={{ backgroundColor: 'rgba(255, 255, 255, 0)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 }}>
+              <Image
+                source={require("../assets/loginHeader.png")}
+                style={{ width: 180, height: 36, tintColor: '#ffffff' }}
+                resizeMode="contain"
+              />
+            </View>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
 
-          const isFocused = state.index === index;
+      <View style={styles.tabWrapper}>
+        <View style={styles.tabContainer}>
+          {state.routes.map((route, index) => {
+            const { options } = descriptors[route.key];
+            const label =
+              options.tabBarLabel !== undefined
+                ? options.tabBarLabel
+                : options.title !== undefined
+                ? options.title
+                : route.name;
 
-          const onPress = () => {
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
+            const isFocused = state.index === index;
 
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name);
-            }
-          };
+            const onPress = () => {
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
+              });
 
-          let activeColor = "#333333"; 
-          if (route.name === "AnnualEdition") activeColor = "#9C27B0";
-          if (route.name === "TermEdition") activeColor = "#204ac0";
-          if (route.name === "SemesterEdition") activeColor = "#8754f2";
+              if (!isFocused && !event.defaultPrevented) {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                navigation.navigate(route.name);
+              }
+            };
 
-          return (
-            <TouchableOpacity
-              key={index}
-              accessibilityRole="button"
-              accessibilityState={isFocused ? { selected: true } : {}}
-              onPress={onPress}
-              style={[
-                styles.tabButton,
-                isFocused 
-                ? { backgroundColor: activeColor, elevation: 4, shadowColor: activeColor, shadowOpacity: 0.3, shadowRadius: 4, shadowOffset: {width: 0, height: 2} } 
-                : { backgroundColor: "transparent" }
-              ]}
-            >
-              <Text style={{ 
-                color: isFocused ? "#ffffff" : "#64748b",
-                fontWeight: isFocused ? "700" : "600",
-                fontSize: 14,
-                textTransform: "capitalize"
-              }}>
-                {label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+            return (
+              <TouchableOpacity
+                key={index}
+                accessibilityRole="button"
+                accessibilityState={isFocused ? { selected: true } : {}}
+                onPress={onPress}
+                style={[
+                  styles.tabButton,
+                  isFocused 
+                  ? { 
+                      backgroundColor: activeTabColor, 
+                      elevation: 4, 
+                      shadowColor: activeTabColor, 
+                      shadowOpacity: 0.4, 
+                      shadowRadius: 4, 
+                      
+                      shadowOffset: {width: 0, height: 2} 
+                    } 
+                  : { backgroundColor: "transparent" }
+                ]}
+              >
+                <Text style={{ 
+                  color: isFocused ? "#ffffff" : "#64748b",
+                  fontWeight: isFocused ? "700" : "600",
+                  fontSize: 12,
+                  textTransform: "capitalize"
+                }}>
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
@@ -81,40 +122,30 @@ function CustomTopTabBar({ state, descriptors, navigation }) {
 
 function TopTabGroup() {
   return (
-    <View style={{ flex: 1, backgroundColor: "#ffffff" }}>      
+    <View style={{ flex: 1, backgroundColor: "#2254d1" }}>      
       <StatusBar 
-        barStyle="dark-content" 
+        barStyle="light-content" 
         backgroundColor="transparent" 
         translucent={true} 
       />
       
-      <SafeAreaView edges={['top']} style={{ backgroundColor: "#ffffff", zIndex: 10 }}>
-        <View style={styles.headerContainer}>
-          <Image
-            source={require("../assets/loginHeader.png")}
-            style={{ width: 160, height: 36, marginTop: 4 }}
-            resizeMode="contain"
-          />
-        </View>
-      </SafeAreaView>
-
       <TopTab.Navigator
         tabBar={props => <CustomTopTabBar {...props} />}
       >
         <TopTab.Screen 
           name="AnnualEdition" 
           component={AnnualEdition} 
-          options={{ tabBarLabel: "Annual Edition" }} 
+          options={{ tabBarLabel: "Annual" }} 
         />
         <TopTab.Screen 
           name="TermEdition" 
           component={TermEdition} 
-          options={{ tabBarLabel: "Term Edition" }} 
+          options={{ tabBarLabel: "Term" }} 
         />
         <TopTab.Screen 
           name="SemesterEdition" 
           component={SemesterEdition} 
-          options={{ tabBarLabel: "Semester Edition" }} 
+          options={{ tabBarLabel: "Semester" }} 
         />
       </TopTab.Navigator>
     </View>
@@ -180,6 +211,7 @@ function TabGroup() {
                <View style={{
                  backgroundColor: focused ? "#eff6ff" : "transparent",
                  paddingHorizontal: 16,
+                 
                  paddingVertical: 4,
                  borderRadius: 20,
                  marginBottom: 2
@@ -222,37 +254,35 @@ const styles = StyleSheet.create({
   headerContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
-    backgroundColor: "#ffffff",
-    borderBottomWidth: 0,
+    paddingVertical: 8,
     width: "100%",
-    elevation: 2, 
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 2,
     marginBottom: 0
   },
   tabWrapper: {
-    backgroundColor: "#ffffff",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    backgroundColor: "transparent",
+    marginTop: 0, 
+    marginHorizontal: 20,
+    borderRadius: 35,
+    padding: 4,
+    elevation: 8,     
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: 30,
+    backgroundColor: '#ffffff',
+    borderRadius: 32,
     padding: 4,
-    height: 48,
+    height: 50,
     alignItems: 'center'
   },
   tabButton: {
     flex: 1,
-    alignItems: 'center',
+        alignItems: 'center',    
     justifyContent: 'center',
-    borderRadius: 26,
+    borderRadius: 30,
     height: '100%',
   }
 });

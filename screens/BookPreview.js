@@ -1,13 +1,13 @@
-import React, { useEffect, useCallback } from "react";
-import { Alert, BackHandler } from "react-native";
+import React, { useEffect, useCallback, useState } from "react";
+import { Alert, BackHandler, ActivityIndicator, View, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import WebView from "react-native-webview";
 import * as ScreenOrientation from "expo-screen-orientation";
 
 const BookPreview = ({ navigation, route }) => {
   const { item } = route.params;
-
-  // ✅ Back press handler (define FIRST)
+  const [isLoading, setIsLoading] = useState(true);
+ 
   const handleBackPress = useCallback(() => {
     Alert.alert(
       "Close Book",
@@ -16,16 +16,18 @@ const BookPreview = ({ navigation, route }) => {
         { text: "No", style: "cancel" },
         {
           text: "Yes",
-          onPress: () => navigation.goBack(),
+          onPress: () => {            
+             ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+             navigation.goBack();
+          },
         },
       ],
       { cancelable: false }
     );
 
-    return true; // important: prevent default back
+    return true; 
   }, [navigation]);
 
-  // ✅ BackHandler setup (RN 0.81 safe)
   useEffect(() => {
     const subscription = BackHandler.addEventListener(
       "hardwareBackPress",
@@ -33,34 +35,61 @@ const BookPreview = ({ navigation, route }) => {
     );
 
     return () => {
-      subscription.remove(); // ✅ correct cleanup
+      subscription.remove();
       ScreenOrientation.unlockAsync();
     };
   }, [handleBackPress]);
 
-  // ✅ Screen orientation control
+  
   useEffect(() => {
     if (item?.orientation === "landscape") {
-      ScreenOrientation.lockAsync(
-        ScreenOrientation.OrientationLock.LANDSCAPE
-      );
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
     } else {
-      ScreenOrientation.lockAsync(
-        ScreenOrientation.OrientationLock.DEFAULT
-      );
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
     }
   }, [item?.orientation]);
+  
+  if (!item?.uri) {
+      return (
+          <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+              <Text>Error: No Book URL Found</Text>
+          </View>
+      )
+  }
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'black' }} edges={['top', 'left', 'right']}>
+      
+      
+      {isLoading && (
+          <View style={{ 
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, 
+              justifyContent: 'center', alignItems: 'center', zIndex: 10 
+          }}>
+              <ActivityIndicator size="large" color="#2563eb" />
+          </View>
+      )}
+
       <WebView
         source={{ uri: item.uri }}
-        className="flex-1"
-        javaScriptEnabled
-        allowsFullscreenVideo
-        allowsInlineMediaPlayback
-        mediaPlaybackRequiresUserAction
-        cacheEnabled={false}
+        style={{ flex: 1 }} 
+        originWhitelist={['*']} 
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        allowFileAccess={true}
+        allowsFullscreenVideo={true}
+        scalesPageToFit={true}
+        
+        
+        onLoadStart={() => setIsLoading(true)}
+        onLoadEnd={() => setIsLoading(false)}
+        onError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            console.warn('WebView error: ', nativeEvent);
+            setIsLoading(false);
+            Alert.alert("Error", "Failed to load book.");
+        }}
+
         injectedJavaScript={
           item?.orientation === "landscape"
             ? `

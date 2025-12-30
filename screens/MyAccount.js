@@ -9,11 +9,11 @@ import {
   Platform,
   Alert,
   StyleSheet,
-  Dimensions,
   StatusBar,
+  useWindowDimensions,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import { Ionicons } from "@expo/vector-icons"; 
+import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
@@ -28,9 +28,10 @@ import {
 
 import { useUserStore } from "../store/user";
 
-const { width, height } = Dimensions.get("window");
-
 const MyAccount = ({ navigation }) => {
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+
   const { user, setUser, clearLocalUser } = useUserStore();
 
   const [loading, setLoading] = useState(true);
@@ -38,7 +39,7 @@ const MyAccount = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [nameChanged, setNameChanged] = useState(false);
-  const [phoneChanged, setPhoneChanged] = useState(false);  
+  const [phoneChanged, setPhoneChanged] = useState(false);
 
   const [nameFocused, setNameFocused] = useState(false);
   const [phoneFocused, setPhoneFocused] = useState(false);
@@ -56,8 +57,8 @@ const MyAccount = ({ navigation }) => {
       setLoading(true);
       if (user?.providerData?.[0]?.providerId === "google.com") {
         try {
-            await GoogleSignin.revokeAccess();
-            await GoogleSignin.signOut();
+          await GoogleSignin.revokeAccess();
+          await GoogleSignin.signOut();
         } catch (e) { console.log(e); }
       }
       await signOut(auth);
@@ -70,7 +71,7 @@ const MyAccount = ({ navigation }) => {
       setLoading(false);
     }
   };
-  
+
   const getUser = async () => {
     try {
       setLoading(true);
@@ -85,15 +86,15 @@ const MyAccount = ({ navigation }) => {
 
       try {
         const response = await axios.get(
-            `https://start-smart-backend.vercel.app/api/get-user?email=${localUser.email}`
+          `https://start-smart-backend.vercel.app/api/get-user?email=${localUser.email}`
         );
         if (response?.data) {
-            setPhone(response.data.phone || "");
-            setUser({ ...localUser, _id: response.data._id, phone: response.data.phone });
+          setPhone(response.data.phone || "");
+          setUser({ ...localUser, _id: response.data._id, phone: response.data.phone });
         }
       } catch (e) { console.log("Offline mode"); }
-      
-    } catch (error) { showToast("Error data fetch"); } 
+
+    } catch (error) { showToast("Error data fetch"); }
     finally { setLoading(false); }
   };
 
@@ -106,12 +107,12 @@ const MyAccount = ({ navigation }) => {
     if (!name.trim()) return showToast("Enter valid name");
     try {
       setLoading(true);
-      if(auth.currentUser) {
+      if (auth.currentUser) {
         await updateProfile(auth.currentUser, { displayName: name });
         setUser({ ...user, displayName: name });
         showToast("Name updated");
       }
-    } catch { showToast("Update failed"); } 
+    } catch { showToast("Update failed"); }
     finally { setLoading(false); }
   };
 
@@ -126,7 +127,7 @@ const MyAccount = ({ navigation }) => {
         setUser({ ...user, phone });
         showToast("Phone updated");
       }
-    } catch { showToast("Update failed"); } 
+    } catch { showToast("Update failed"); }
     finally { setLoading(false); }
   };
 
@@ -145,116 +146,119 @@ const MyAccount = ({ navigation }) => {
     );
   }
 
+  const headerHeight = isLandscape ? 220 : height * 0.30;
+  const cardWidth = isLandscape ? Math.min(width * 0.7, 600) : width * 0.9;
+
   return (
     <View style={styles.mainContainer}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
-      
-      <View style={styles.headerContainer}>
-        <LinearGradient
-            colors={["#2563eb", "#1e40af"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.gradientHeader}
-        >
-            <View style={styles.circle1} />
-            <View style={styles.circle2} />
-            
-            <View style={styles.headerTopRow}>
-                <Text style={styles.headerTitle}>Profile</Text>
-                <TouchableOpacity 
-                    onPress={() => navigation.navigate("AboutUs")}
-                    style={styles.infoBtn}
-                >
-                    <Ionicons name="information-circle-outline" size={24} color="white" />
-                </TouchableOpacity>
-            </View>
 
-            <View style={styles.profileSection}>
-                <View style={styles.avatarContainer}>
-                    <Text style={styles.avatarText}>
-                        {name ? name.charAt(0).toUpperCase() : "U"}
-                    </Text>
-                </View>
-                <Text style={styles.userName}>{name || "User"}</Text>
-                <Text style={styles.userEmail}>{email}</Text>
+      <View style={[styles.headerContainer, { height: headerHeight, width: width }]}>
+        <LinearGradient
+          colors={["#2563eb", "#1e40af"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.gradientHeader}
+        >
+          <View style={styles.circle1} />
+          <View style={styles.circle2} />
+
+          <View style={styles.headerTopRow}>
+            <Text style={styles.headerTitle}>Profile</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("AboutUs")}
+              style={styles.infoBtn}
+            >
+              <Ionicons name="information-circle-outline" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.profileSection}>
+            <View style={styles.avatarContainer}>
+              <Text style={styles.avatarText}>
+                {name ? name.charAt(0).toUpperCase() : "U"}
+              </Text>
             </View>
+            <Text style={styles.userName}>{name || "User"}</Text>
+            <Text style={styles.userEmail}>{email}</Text>
+          </View>
         </LinearGradient>
       </View>
 
       <View style={styles.scrollWrapper}>
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent} 
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           bounces={true}
         >
-          <View style={styles.cardContainer}>
-              <Text style={styles.sectionTitle}>Personal Details</Text>
+          <View style={[styles.cardContainer, { width: cardWidth }]}>
+            <Text style={styles.sectionTitle}>Personal Details</Text>
 
-              <Text style={styles.label}>Full Name</Text>
-              <View style={[styles.inputWrapper, nameFocused && styles.inputFocused]}>
-                <Ionicons name="person-outline" size={20} color={nameFocused ? "#2563eb" : "#94a3b8"} />
-                <TextInput
-                    value={name}
-                    onChangeText={setName}
-                    onFocus={() => setNameFocused(true)}
-                    onBlur={() => setNameFocused(false)}
-                    style={styles.input}
-                    placeholder="Enter your name"
-                />
-                {nameChanged && (
-                    <TouchableOpacity onPress={saveName} style={styles.saveIcon}>
-                        <Ionicons name="checkmark-circle" size={24} color="#2563eb" />
-                    </TouchableOpacity>
-                )}
-              </View>
-
-              <Text style={styles.label}>Email Address</Text>
-              <View style={[styles.inputWrapper, styles.readOnlyInput]}>
-                <Ionicons name="mail-outline" size={20} color="#94a3b8" />
-                <TextInput
-                    value={email}
-                    editable={false}
-                    style={[styles.input, { color: "#64748b" }]}
-                />
-                <Ionicons name="lock-closed-outline" size={18} color="#cbd5e1" />
-              </View>
-
-              <Text style={styles.label}>Phone Number</Text>
-              <View style={[styles.inputWrapper, phoneFocused && styles.inputFocused]}>
-                <Ionicons name="call-outline" size={20} color={phoneFocused ? "#2563eb" : "#94a3b8"} />
-                <TextInput
-                    value={String(phone)}
-                    onChangeText={setPhone}
-                    onFocus={() => setPhoneFocused(true)}
-                    onBlur={() => setPhoneFocused(false)}
-                    keyboardType="phone-pad"
-                    maxLength={10}
-                    style={styles.input}
-                    placeholder="Add phone number"
-                />
-                {phoneChanged && (
-                    <TouchableOpacity onPress={savePhone} style={styles.saveIcon}>
-                        <Ionicons name="checkmark-circle" size={24} color="#2563eb" />
-                    </TouchableOpacity>
-                )}
-              </View>
-
-              {user?.providerData?.[0]?.providerId !== "google.com" && (
-                  <TouchableOpacity onPress={resetPassword} style={styles.passwordRow}>
-                    <View style={styles.passwordIconBox}>
-                        <Ionicons name="key-outline" size={20} color="#2563eb" />
-                    </View>
-                    <Text style={styles.passwordText}>Change Password</Text>
-                    <Ionicons name="chevron-forward" size={20} color="#cbd5e1" />
-                  </TouchableOpacity>
+            <Text style={styles.label}>Full Name</Text>
+            <View style={[styles.inputWrapper, nameFocused && styles.inputFocused]}>
+              <Ionicons name="person-outline" size={20} color={nameFocused ? "#2563eb" : "#94a3b8"} />
+              <TextInput
+                value={name}
+                onChangeText={setName}
+                onFocus={() => setNameFocused(true)}
+                onBlur={() => setNameFocused(false)}
+                style={styles.input}
+                placeholder="Enter your name"
+              />
+              {nameChanged && (
+                <TouchableOpacity onPress={saveName} style={styles.saveIcon}>
+                  <Ionicons name="checkmark-circle" size={24} color="#2563eb" />
+                </TouchableOpacity>
               )}
+            </View>
+
+            <Text style={styles.label}>Email Address</Text>
+            <View style={[styles.inputWrapper, styles.readOnlyInput]}>
+              <Ionicons name="mail-outline" size={20} color="#94a3b8" />
+              <TextInput
+                value={email}
+                editable={false}
+                style={[styles.input, { color: "#64748b" }]}
+              />
+              <Ionicons name="lock-closed-outline" size={18} color="#cbd5e1" />
+            </View>
+
+            <Text style={styles.label}>Phone Number</Text>
+            <View style={[styles.inputWrapper, phoneFocused && styles.inputFocused]}>
+              <Ionicons name="call-outline" size={20} color={phoneFocused ? "#2563eb" : "#94a3b8"} />
+              <TextInput
+                value={String(phone)}
+                onChangeText={setPhone}
+                onFocus={() => setPhoneFocused(true)}
+                onBlur={() => setPhoneFocused(false)}
+                keyboardType="phone-pad"
+                maxLength={10}
+                style={styles.input}
+                placeholder="Add phone number"
+              />
+              {phoneChanged && (
+                <TouchableOpacity onPress={savePhone} style={styles.saveIcon}>
+                  <Ionicons name="checkmark-circle" size={24} color="#2563eb" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {user?.providerData?.[0]?.providerId !== "google.com" && (
+              <TouchableOpacity onPress={resetPassword} style={styles.passwordRow}>
+                <View style={styles.passwordIconBox}>
+                  <Ionicons name="key-outline" size={20} color="#2563eb" />
+                </View>
+                <Text style={styles.passwordText}>Change Password</Text>
+                <Ionicons name="chevron-forward" size={20} color="#cbd5e1" />
+              </TouchableOpacity>
+            )}
           </View>
 
-          <TouchableOpacity onPress={handleSignOut} style={styles.logoutBtn} activeOpacity={0.8}>
-              <Ionicons name="log-out-outline" size={22} color="#ef4444" />
-              <Text style={styles.logoutText}>Log Out</Text>
+          <TouchableOpacity onPress={handleSignOut} style={[styles.logoutBtn, { width: cardWidth }]} activeOpacity={0.8}>
+            <Ionicons name="log-out-outline" size={22} color="#ef4444" />
+            <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
-          <View style={{height: 50}} />
+          <View style={{ height: 50 }} />
         </ScrollView>
       </View>
     </View>
@@ -264,10 +268,8 @@ const MyAccount = ({ navigation }) => {
 const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: "#f8fafc" },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "white" },
-  
-  headerContainer: { 
-    height: height * 0.28, 
-    width: width,
+
+  headerContainer: {
     zIndex: 1
   },
   gradientHeader: {
@@ -287,13 +289,13 @@ const styles = StyleSheet.create({
   infoBtn: { padding: 8, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20 },
 
   profileSection: { alignItems: 'center', marginTop: 5 },
-  avatarContainer: { 
-    width: 60, height: 60, 
-    borderRadius: 30, backgroundColor: 'white', 
-    justifyContent: 'center', alignItems: 'center', 
+  avatarContainer: {
+    width: 60, height: 60,
+    borderRadius: 30, backgroundColor: 'white',
+    justifyContent: 'center', alignItems: 'center',
     borderWidth: 3, borderColor: 'rgba(255,255,255,0.2)',
     marginBottom: 6,
-    shadowColor: "#000", shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.2, shadowRadius: 5, elevation: 5
+    shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 5, elevation: 5
   },
   avatarText: { fontSize: 24, fontWeight: 'bold', color: '#2563eb' },
   userName: { fontSize: 16, fontWeight: 'bold', color: 'white' },
@@ -301,24 +303,23 @@ const styles = StyleSheet.create({
 
   scrollWrapper: {
     flex: 1,
-    marginTop: 5, 
+    marginTop: 5,
     zIndex: 2,
     backgroundColor: 'transparent'
   },
-  scrollContent: { 
+  scrollContent: {
     alignItems: 'center',
     paddingBottom: 20
   },
 
   cardContainer: {
-    width: width * 0.9,
     backgroundColor: 'white',
     borderRadius: 24,
     padding: 24,
     shadowColor: "#1e293b", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 8,
   },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1e293b', marginBottom: 20 },
-  
+
   label: { fontSize: 13, fontWeight: '600', color: '#64748b', marginBottom: 8, marginLeft: 4 },
   inputWrapper: {
     flexDirection: 'row', alignItems: 'center',
@@ -350,7 +351,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fef2f2',
     borderWidth: 1, borderColor: '#fee2e2',
     borderRadius: 16,
-    width: width * 0.9,
     paddingVertical: 16,
     marginTop: 24,
     marginBottom: 20
